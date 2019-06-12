@@ -35,7 +35,7 @@ WORKDIR /tmp
 
 USER user
 
-RUN helm init --client-only --tiller-namespace tiller
+RUN helm init --client-only --tiller-namespace --client-timeout-millis 300000 tiller
 
 EXPOSE 8064
 
