@@ -1,13 +1,16 @@
 FROM debian:latest
 
-RUN apt-get update && apt-get upgrade && apt-get install -y curl sudo procps && \
+RUN apt-get update && apt-get -y upgrade && apt-get install -y curl sudo procps && \
 	useradd -s /sbin/nologin user && \
 	echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list && \
 	apt-get update && \
 	cd /tmp && \
 	curl -O https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh && \
 	chmod +x InstallHalyard.sh && \
-	echo -e "user\n\n" | ./InstallHalyard.sh
+	sed -i'' 's#^install_halyard$#install_halyard\n/tmp/modify_halyard.sh#' InstallHalyard.sh && \
+	echo "sed -i'' 's/^HALYARD_STARTUP_TIMEOUT_SECONDS=.*$/HALYARD_STARTUP_TIMEOUT_SECONDS=400/' /usr/local/bin/hal" > modify_halyard.sh && \
+	chmod +x /tmp/modify_halyard.sh && \
+	echo "\n" | ./InstallHalyard.sh --user user 
 	
 RUN curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
 	chmod +x /usr/local/bin/kubectl
@@ -35,7 +38,7 @@ WORKDIR /tmp
 
 USER user
 
-RUN helm init --client-only --tiller-namespace --client-timeout-millis 300000 tiller
+RUN helm init --client-only --tiller-namespace tiller
 
 EXPOSE 8064
 
